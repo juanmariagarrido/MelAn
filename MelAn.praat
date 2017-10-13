@@ -63,21 +63,34 @@
 #########################################################################################
 
 
-form Argumentos
-	sentence Fichero_wav iff_a1001_001.wav
-	sentence Directorio_wav /Users/juanma/Dropbox/trabajo/MelAn_3.0/Ficheros_prueba/
-	sentence Fichero_textgrid iff_a1001_001.TextGrid
-	sentence Directorio_textgrid /Users/juanma/Dropbox/trabajo/MelAn_3.0/Ficheros_prueba/
-	sentence Directorio_salida /Users/juanma/Dropbox/trabajo/MelAn_3.0/Pruebas/
-	positive Tier_transcripcion_fonetica 2
-	positive Tier_silabas 3
-	positive Tier_grupos_acentuales 4
-	positive Tier_grupos_entonativos 5
-	positive Tier_grupos_fonicos 6
-	sentence Alfabeto_fonetico SAMPA
-	sentence Etiqueta_pausa P
+form Arguments
+	sentence Wav_file iff_a1001_001.wav
+	sentence Wav_directory /Users/juanma/Dropbox/trabajo/MelAn_3.0/Ficheros_prueba/
+	sentence Textgrid_file iff_a1001_001.TextGrid
+	sentence Textgrid_directory /Users/juanma/Dropbox/trabajo/MelAn_3.0/Ficheros_prueba/
+	sentence Output_directory /Users/juanma/Dropbox/trabajo/MelAn_3.0/Pruebas/
+	positive Phonetic_transcription_tier 2
+	positive Syllable_tier 3
+	positive Stress_group_tier 4
+	positive Intonation_group_tier 5
+	positive Breath_group_tier 6
+	sentence Phonetic_alphabet IPA
+	sentence Pause_label P
 endform
-	
+
+	fichero_wav$ = wav_file$
+	directorio_wav$ = wav_directory$
+	fichero_textgrid$ = textgrid_file$
+	directorio_textgrid$ = textgrid_directory$
+	directorio_salida$ = output_directory$
+	tier_transcripcion_fonetica = phonetic_transcription_tier
+	tier_silabas = syllable_tier
+	tier_grupos_acentuales = stress_group_tier
+	tier_grupos_entonativos = intonation_group_tier
+	tier_grupos_fonicos = breath_group_tier
+	alfabeto_fonetico$ = phonetic_alphabet$
+	etiqueta_pausa$ = pause_label$
+
 # Lee el Sonido
 
 nombre_completo_fichero_entrada$ = directorio_wav$+"/"+fichero_wav$
@@ -103,9 +116,6 @@ if fileReadable (nombre_completo_fichero_entrada$)
 		#### Se estima la F0 del fichero de entrada
 
 		#printline Calculamos la F0...
-		#printline Estimamos la F0 global de 'fichero_wav$' ...
-
-		call estima_f0_praat_comando sound 0.0 50.0 600.0 1
 
 		#printline Estimamos la F0 por grupos fonicos de 'fichero_wav$' ...
 
@@ -145,7 +155,9 @@ if fileReadable (nombre_completo_fichero_entrada$)
 
 				tabla_f0$=nombre_objeto_pitch$
 				call calcula_regresion_lineal 'tabla_f0$'
-				
+				select Table 'tabla_f0$'
+				Remove
+			
 				select textgrid
 
 			endif
@@ -182,9 +194,13 @@ if fileReadable (nombre_completo_fichero_entrada$)
 
 				nombre_tabla_P$ =nombre_sonido$+"_"+texto_cont_intervalos$+"_tablaF0_P"
 				call calcula_regresion_lineal 'nombre_tabla_P$'
+				select Table 'nombre_tabla_P$'
+				Remove
 
 				nombre_tabla_V$=nombre_sonido$+"_"+texto_cont_intervalos$+"_tablaF0_V"
 				call calcula_regresion_lineal 'nombre_tabla_V$'
+				select Table 'nombre_tabla_V$'
+				Remove
 
 			endif
 			
@@ -227,9 +243,13 @@ if fileReadable (nombre_completo_fichero_entrada$)
 
 				nombre_tabla_P$ =nombre_sonido$+"_"+texto_cont_intervalos$+"_tablaF0_P"
 				call calcula_regresion_lineal 'nombre_tabla_P$'
+				select Table 'nombre_tabla_P$'
+				Remove
 
 				nombre_tabla_V$=nombre_sonido$+"_"+texto_cont_intervalos$+"_tablaF0_V"
 				call calcula_regresion_lineal 'nombre_tabla_V$'
+				select Table 'nombre_tabla_V$'
+				Remove
 
 			endif
 			
@@ -240,7 +260,6 @@ if fileReadable (nombre_completo_fichero_entrada$)
 		#printline Creamos la tabla con los valores de las rectas de F0...
 
 		call crea_tabla_val_lineas_ref_GF textgrid 'tier_grupos_entonativos' 'etiqueta_pausa$'
-
 
 	
 		#Creamos un tier con los patrones
@@ -259,11 +278,15 @@ if fileReadable (nombre_completo_fichero_entrada$)
 		nombre_completo_textgrid_salida$ = directorio_salida$+"/"+fichero_textgrid$
 		Write to text file... 'nombre_completo_textgrid_salida$'
 
+		select sound
+		plus textgrid
+		Remove
+
 		printline MelAn completed
 
 	else
 
-		printline No es posible abrir el fichero 'nombre_completo_fichero_textgrid$'
+		printline File 'nombre_completo_fichero_textgrid$' not found
 		select sound
 		Remove
 
@@ -271,48 +294,9 @@ if fileReadable (nombre_completo_fichero_entrada$)
 
 
 else
-	printline No es posible abrir el fichero 'nombre_completo_fichero_entrada$'
+	printline File 'nombre_completo_fichero_entrada$' not found
 
 endif
-
-
-procedure estima_f0_praat_comando mySound time_step pitch_floor pitch_ceiling f0_range
-
-	select mySound
-	sound$ = selected$ ("Sound")
-	
-	To Pitch... time_step pitch_floor pitch_ceiling
-
-	first_pitch = selected ("Pitch")
-
-	min = Get minimum... 0 0 Hertz None
-	min = round(min)
-	max = Get maximum... 0 0 Hertz None
-	max = round(max)
-	q1 = Get quantile... 0 0 0.25 Hertz
-	q1 = floor(q1)
-	q3 = Get quantile... 0 0 0.75 Hertz
-	q3 = ceiling(q3)
-	# Round floor and ceiling values to the nearest 10 Hz
-	pitch_floor = round((0.7*q1)/10)*10
-	if f0_range = 1
-		pitch_ceiling = round((1.5*q3)/10)*10
-	else
-		pitch_ceiling = round((2.5*q3)/10)*10
-	endif
-				
-	select first_pitch
-	Remove
-
-	select mySound
-
-	To Pitch... time_step pitch_floor pitch_ceiling
-	#nombre_objeto_pitch$ = "sound" + " pitch"
-	#nombre_objeto_pitch$ = "soundpitch"
-	nombre_objeto_pitch$ = sound$
-	Rename... 'nombre_objeto_pitch$'
-
-endproc
 
 procedure estima_f0_praat_GF_comando mySound myTextGrid pauses_tier time_step pitch_floor pitch_ceiling F0_range
 
@@ -600,8 +584,7 @@ procedure etiqueta_est_P_V_por_GF_con_pendiente_GF_juanma_comando textgrid_entra
 			#tabla = selected ("LinearRegression")
 			#tabla = selected ("Strings")
 			tabla = selected ("Table")
-
-			
+					
 			#info$ = Info
 
 			#printline He leido correctamente la tabla 'nombre_completo_fichero_tabla$'
@@ -692,9 +675,9 @@ procedure etiqueta_est_P_V_por_GF_con_pendiente_GF_juanma_comando textgrid_entra
 
 			endfor
 
-			#select pitch
-			#plus tabla
-			#Remove
+			select pitch
+			plus tabla
+			Remove
 
 		endif
 
@@ -801,6 +784,8 @@ procedure calcula_regresion_lineal tabla$
 	
 		pendiente = extractNumber (info$, "Coefficient of factor Time: ")
 		#pendiente$ = fixed$ (pendiente, 5)
+
+		Remove
 
 	else
 
@@ -1052,6 +1037,8 @@ procedure anota_f0_P+_V- textgrid tier_intonation_groups tier_stylization tier_a
 					#printline Valor inicial V: 'valor_inicial_v'
 					#printline Valor pendiente V: 'valor_pendiente_v'
 
+					Remove
+
 					select Table 'nombre_completo_regresion_P$'
 
 					valor_inicial_p = Get value... 1 Valor_inicial
@@ -1059,6 +1046,8 @@ procedure anota_f0_P+_V- textgrid tier_intonation_groups tier_stylization tier_a
 
 					#printline Valor inicial P: 'valor_inicial_p'
 					#printline Valor pendiente P: 'valor_pendiente_p'
+
+					Remove
 
 					select textgrid_prov
 					
@@ -1135,6 +1124,7 @@ procedure anota_f0_P+_V- textgrid tier_intonation_groups tier_stylization tier_a
 		Merge
 		Rename... 'name$'
 		textgrid_salida = selected ("TextGrid")
+		Remove
 
 
 	select textgrid
@@ -1146,7 +1136,7 @@ procedure anota_f0_P+_V- textgrid tier_intonation_groups tier_stylization tier_a
 	Rename... 'name$'
 	textgrid = selected ("TextGrid")
 
-	select 'textgrid_etiquetado'
+	select textgrid_etiquetado
 	plus old_textgrid
 	Remove
 
@@ -1270,7 +1260,7 @@ procedure simplifica_anotacion textgrid_entrada tier_intonation_groups tier_anno
 	textgrid = selected ("TextGrid")
 
 
-	select 'textgrid_etiquetas'
+	select textgrid_etiquetas
 	plus old_textgrid
 	Remove
 
@@ -1899,6 +1889,9 @@ procedure anota_patrones textgrid_file stylization_tier annotation_tier stress_g
 				
 			endif
 
+			select tabla_salida
+			Remove
+
 
 			endif
 
@@ -1915,7 +1908,7 @@ procedure anota_patrones textgrid_file stylization_tier annotation_tier stress_g
 	Rename... 'name$'
 	textgrid = selected ("TextGrid")
 
-	select 'textgrid_patrones'
+	select textgrid_patrones
 	plus old_textgrid
 	Remove
 
@@ -2213,7 +2206,6 @@ procedure crea_tabla_val_lineas_ref_GF textgrid tier_gf etiqueta_pausa$
 			valor_inicial_p$ = Get value... 1 Valor_inicial
 			pendiente_p$ = Get value... 1 Pendiente
 
-			
 			nombre_completo_objeto_tabla_V$ = nombre_completo_objeto_tabla_global$+"_tablaF0_V"
 			nombre_completo_regresion_V$ = nombre_completo_objeto_tabla_V$ + "_regression"
 
@@ -2423,6 +2415,7 @@ procedure crea_tabla_val_lineas_ref_GF textgrid tier_gf etiqueta_pausa$
 
 	Write to table file... 'nombre_completo_fichero_salida$'
 	Rename... 'nombre_tabla_salida$'
+	Remove
 
 endproc
 
