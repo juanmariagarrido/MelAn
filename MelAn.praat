@@ -110,6 +110,16 @@ if fileReadable (nombre_completo_fichero_entrada$)
 	
 		textgrid = selected ("TextGrid")
 
+		if alfabeto_fonetico$ = "SAMPA"
+
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 """a" "a_&quot" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 """e" "e_&quot" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 """i" "i_&quot" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 """o" "o_&quot" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 """u" "u_&quot" Literals
+
+		endif
+
 
 		#### Se estima la F0 del fichero de entrada
 
@@ -273,6 +283,17 @@ if fileReadable (nombre_completo_fichero_entrada$)
 
 		#Guardamos el textgrid de salida en un fichero
 
+		if alfabeto_fonetico$ = "SAMPA"
+
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 "a_&quot" """a" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 "e_&quot" """e" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 "i_&quot" """i" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 "o_&quot" """o" Literals
+			Replace interval text... 'tier_transcripcion_fonetica' 0 0 "u_&quot" """u" Literals
+
+		endif
+
+
 		nombre_completo_textgrid_salida$ = directorio_salida$+"/"+fichero_textgrid$
 		Write to text file... 'nombre_completo_textgrid_salida$'
 
@@ -296,7 +317,7 @@ else
 
 endif
 
-procedure estima_f0_praat_GF_comando mySound myTextGrid pauses_tier time_step pitch_floor pitch_ceiling F0_range
+procedure estima_f0_praat_GF_comando mySound myTextGrid pauses_tier time_step pitch_floor pitch_ceiling f0_range
 
 # Creado por Juanma el 10.07.2007
 # Script para caModificolcular el F0 de un objeto Sound por el metodo Praat
@@ -1321,7 +1342,7 @@ procedure anota_patrones textgrid_file stylization_tier annotation_tier stress_g
 
 			if tekst$ <> etiqueta_pausa$
 
-				# printline Intervalo: 'cont_intervalos'
+				#printline Intervalo: 'cont_intervalos'
 				
 				etiqueta_anterior$ = Get label of interval... 'stress_groups_tier' (cont_intervalos-1)
 
@@ -1774,7 +1795,7 @@ procedure anota_patrones textgrid_file stylization_tier annotation_tier stress_g
 									select tabla_salida
 
 									Set string value... num_celda 2 'posicion_punto_anterior2$'
-									printline Modifico la posicion de punto anterior 2 a 'posicion_punto_anterior2$'
+									#printline Modifico la posicion de punto anterior 2 a 'posicion_punto_anterior2$'
 
 								endif
 
@@ -1784,7 +1805,7 @@ procedure anota_patrones textgrid_file stylization_tier annotation_tier stress_g
 								select tabla_salida
 
 								Set string value... num_celda 2 'posicion_punto_anterior$'
-								printline Modifico la posicion de punto anterior  a 'posicion_punto_anterior$'
+								# printline Modifico la posicion de punto anterior  a 'posicion_punto_anterior$'
 
 							endif
 
